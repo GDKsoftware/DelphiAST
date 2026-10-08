@@ -241,6 +241,65 @@ begin
   end;
 end;
 
+procedure TestAttributeOverwrite;
+var
+  Node: TSyntaxNode;
+begin
+  Node := TSyntaxNode.Create(ntMethod);
+  try
+    Node.SetAttribute(anName, 'First');
+    Node.SetAttribute(anType, 'Kept');
+    Node.SetAttribute(anName, 'Second');
+    AssertEquals('Second', Node.GetAttribute(anName), 'Overwritten attribute.');
+    AssertEquals('Kept', Node.GetAttribute(anType), 'Other attribute.');
+    AssertEquals(2, Length(Node.Attributes), 'Overwriting must not add an entry.');
+  finally
+    Node.Free;
+  end;
+end;
+
+procedure TestAttributeRemove;
+var
+  Node: TSyntaxNode;
+begin
+  Node := TSyntaxNode.Create(ntMethod);
+  try
+    Node.SetAttribute(anName, 'Name');
+    Node.SetAttribute(anType, 'Type');
+    Node.SetAttribute(anKind, 'Kind');
+    Node.SetAttribute(anName, '');
+    AssertFalse(Node.HasAttribute(anName), 'An empty value removes the attribute.');
+    AssertEquals(2, Length(Node.Attributes), 'Removing must drop the entry.');
+    AssertEquals('Type', Node.GetAttribute(anType), 'First remaining attribute.');
+    AssertEquals('Kind', Node.GetAttribute(anKind), 'Second remaining attribute.');
+    Node.SetAttribute(anName, 'Again');
+    AssertEquals('Again', Node.GetAttribute(anName), 'A removed attribute can be set again.');
+    AssertEquals(3, Length(Node.Attributes), 'Setting it again adds one entry.');
+  finally
+    Node.Free;
+  end;
+end;
+
+procedure TestRepeatedCallingConvention;
+var
+  Root, IntfNode: TSyntaxNode;
+begin
+  Root := ParseSource('unit Example; interface ' +
+    'procedure Same(A: Integer); stdcall; stdcall; external ''a.dll'' index 93; ' +
+    'procedure Other; stdcall; cdecl; external ''a.dll''; implementation end.');
+  try
+    IntfNode := FindDescendant(Root, ntInterface);
+    AssertNotNil(IntfNode, 'Missing interface');
+    AssertEquals(2, CountDescendants(IntfNode, ntMethod), 'Method count.');
+    AssertEquals('stdcall', IntfNode.ChildNodes[0].GetAttribute(anCallingConvention),
+      'A repeated calling convention.');
+    AssertEquals('cdecl', IntfNode.ChildNodes[1].GetAttribute(anCallingConvention),
+      'The last of two calling conventions.');
+  finally
+    Root.Free;
+  end;
+end;
+
 procedure TestInvalidSyntax;
 var
   Root: TSyntaxNode;
@@ -295,6 +354,9 @@ begin
   RunTest('AST.SourcePositions', TestSourcePositions);
   RunTest('AST.ConstantEndPosition', TestConstantEndPosition);
   RunTest('AST.VariableEndPosition', TestVariableEndPosition);
+  RunTest('Node.AttributeOverwrite', TestAttributeOverwrite);
+  RunTest('Node.AttributeRemove', TestAttributeRemove);
+  RunTest('AST.RepeatedCallingConvention', TestRepeatedCallingConvention);
   RunTest('Parser.InvalidSyntax', TestInvalidSyntax);
   {$IFNDEF FPC}
   RunTest('Serialization.BinaryRoundTrip', TestBinarySerializationRoundTrip);

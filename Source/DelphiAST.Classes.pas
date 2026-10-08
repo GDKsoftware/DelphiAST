@@ -421,32 +421,38 @@ var
   AttributeEntry: PAttributeEntry;
   len: Integer;
 begin
-  if not HasAttribute(Key) then
+  if (Value = '') then
   begin
-    if (Value = '') then Exit;  //no action needed
+    RemoveAttribute(Key);
+    Exit;
+  end;
+  if not TryGetAttributeEntry(Key, AttributeEntry) then
+  begin
     len := Length(FAttributes);
     SetLength(FAttributes, len + 1);
     AttributeEntry := @FAttributes[len];
     AttributeEntry^.Key := Key;
     Include(FAttributesInUse, Key);
   end;
-  if (Value = '') then RemoveAttribute(Key);
   AttributeEntry^.Value := Value;
 end;
 
 procedure TSyntaxNode.RemoveAttribute(const Key: TAttributeName);
-const
-  Size = SizeOf(TAttributeEntry);
 var
-  Entry: PAttributeEntry;
-  Index: integer;
+  i, Kept: Integer;
 begin
-  if HasAttribute(Key) then begin
-    TryGetAttributeEntry(Key, Entry);
-    Index:= (NativeUInt(Entry) - NativeUInt(@FAttributes[0])) + Size;
-    Move(Entry^, Pointer(NativeUInt(Entry)+Size)^, (High(FAttributes) * Size) - Index);
-    Exclude(FAttributesInUse, Key);
-  end;
+  if not HasAttribute(Key) then
+    Exit;
+  Kept := 0;
+  for i := 0 to High(FAttributes) do
+    if FAttributes[i].Key <> Key then
+    begin
+      if Kept <> i then
+        FAttributes[Kept] := FAttributes[i];
+      Inc(Kept);
+    end;
+  SetLength(FAttributes, Kept);
+  Exclude(FAttributesInUse, Key);
 end;
 
 function SameText(const Needle: string; const HayStack: array of string): boolean; overload;
