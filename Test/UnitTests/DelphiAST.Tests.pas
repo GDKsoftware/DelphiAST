@@ -258,6 +258,28 @@ begin
   end;
 end;
 
+procedure TestAttributeRemove;
+var
+  Node: TSyntaxNode;
+begin
+  Node := TSyntaxNode.Create(ntMethod);
+  try
+    Node.SetAttribute(anName, 'Name');
+    Node.SetAttribute(anType, 'Type');
+    Node.SetAttribute(anKind, 'Kind');
+    Node.SetAttribute(anName, '');
+    AssertFalse(Node.HasAttribute(anName), 'An empty value removes the attribute.');
+    AssertEquals(2, Length(Node.Attributes), 'Removing must drop the entry.');
+    AssertEquals('Type', Node.GetAttribute(anType), 'First remaining attribute.');
+    AssertEquals('Kind', Node.GetAttribute(anKind), 'Second remaining attribute.');
+    Node.SetAttribute(anName, 'Again');
+    AssertEquals('Again', Node.GetAttribute(anName), 'A removed attribute can be set again.');
+    AssertEquals(3, Length(Node.Attributes), 'Setting it again adds one entry.');
+  finally
+    Node.Free;
+  end;
+end;
+
 procedure TestRepeatedCallingConvention;
 var
   Root, IntfNode: TSyntaxNode;
@@ -333,6 +355,7 @@ begin
   RunTest('AST.ConstantEndPosition', TestConstantEndPosition);
   RunTest('AST.VariableEndPosition', TestVariableEndPosition);
   RunTest('Node.AttributeOverwrite', TestAttributeOverwrite);
+  RunTest('Node.AttributeRemove', TestAttributeRemove);
   RunTest('AST.RepeatedCallingConvention', TestRepeatedCallingConvention);
   RunTest('Parser.InvalidSyntax', TestInvalidSyntax);
   {$IFNDEF FPC}
