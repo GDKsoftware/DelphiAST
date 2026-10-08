@@ -317,6 +317,26 @@ begin
   end;
 end;
 
+procedure TestDirectiveBeforeUnit;
+var
+  Root: TSyntaxNode;
+begin
+  Root := ParseSource('{$WARN UNIT_PLATFORM OFF}' + sLineBreak + '{$D+}' + sLineBreak +
+    'unit Example; interface implementation end.');
+  try
+    AssertNotNil(Root, 'Missing root');
+    AssertTrue(Root.Typ = ntUnit, 'The root is the unit.');
+    AssertTrue(Root.ChildNodes[0].Typ = ntCompilerDirective, 'First directive under the root.');
+    AssertEquals('WARN', Root.ChildNodes[0].GetAttribute(anType), 'First directive, in source order.');
+    AssertEquals(1, Root.ChildNodes[0].Line, 'First directive line.');
+    AssertTrue(Root.ChildNodes[1].Typ = ntCompilerDirective, 'Second directive under the root.');
+    AssertEquals('D', Root.ChildNodes[1].GetAttribute(anType), 'Second directive, in source order.');
+    AssertNotNil(FindDescendant(Root, ntImplementation), 'The rest of the unit still parses.');
+  finally
+    Root.Free;
+  end;
+end;
+
 procedure TestInvalidSyntax;
 var
   Root: TSyntaxNode;
@@ -397,6 +417,7 @@ begin
   RunTest('Node.AttributeRemove', TestAttributeRemove);
   RunTest('AST.RepeatedCallingConvention', TestRepeatedCallingConvention);
   RunTest('AST.UnicodeStringTypecast', TestUnicodeStringTypecast);
+  RunTest('AST.DirectiveBeforeUnit', TestDirectiveBeforeUnit);
   RunTest('Parser.InvalidSyntax', TestInvalidSyntax);
   RunTest('Parser.UnexpectedEndOfFilePosition', TestUnexpectedEndOfFilePosition);
   {$IFNDEF FPC}
