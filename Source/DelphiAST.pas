@@ -63,8 +63,12 @@ type
     procedure DoOnComment(Sender: TObject; const Text: string);
     function DequoteString(const S: string): string;
     function GetMainSection(Node: TSyntaxNode): TSyntaxNode;
+    procedure PushRootNode(Typ: TSyntaxNodeType);
   protected
     FStack: TNodeStack;
+    //Compiler directives that come before the `unit`/`program`/`library`/`package` keyword,
+    //when there is no root node yet to put them under. PushRootNode adopts them.
+    FLeadingDirectives: TList<TSyntaxNode>;
     FComments: TObjectList<TCommentNode>;
     procedure AccessSpecifier; override;
     procedure AdditiveOperator; override;
@@ -1148,6 +1152,18 @@ begin
   Result:= Node;
 end;
 
+procedure TPasSyntaxTreeBuilder.PushRootNode(Typ: TSyntaxNodeType);
+var
+  Node: TSyntaxNode;
+begin
+  FStack.Push(TSyntaxNode.Create(Typ));
+  AssignLexerPositionToNode(Lexer, FStack.Peek);
+  //A directive before the keyword goes where one right after it would: under the root.
+  for Node in FLeadingDirectives do
+    FStack.Peek.AddChild(Node);
+  FLeadingDirectives.Clear;
+end;
+
 procedure TPasSyntaxTreeBuilder.CompilerDirective;
 var
   Directive: string;
@@ -1158,11 +1174,19 @@ begin
   Directive:= Uppercase(Lexer.Token);
   //Always place the compiler directive directly under the `ntInterface` or `ntImplementation` node
   //or in the main section in a library, program or package.
-  Root:= GetMainSection(FStack.Peek);
+  //A directive before the `unit` keyword comes before any node exists; hold on to it until
+  //PushRootNode creates the root.
+  if FStack.Count = 0 then
+    Root:= nil
+  else
+    Root:= GetMainSection(FStack.Peek);
   Node:= TValuedSyntaxNode.Create(ntCompilerDirective);
   AssignLexerPositionToNode(Lexer, Node);
   Node.Value:= Directive;
-  Root.AddChild(Node);
+  if Assigned(Root) then
+    Root.AddChild(Node)
+  else
+    FLeadingDirectives.Add(Node);
   //Parse the directive
   if (Directive.StartsWith('(*$')) then begin
     Delete(Directive, 1, 3);
@@ -1367,6 +1391,7 @@ constructor TPasSyntaxTreeBuilder.Create;
 begin
   inherited;
   FStack := TNodeStack.Create(Lexer);
+  FLeadingDirectives := TList<TSyntaxNode>.Create;
   FComments := TObjectList<TCommentNode>.Create(True);
   OnComment := DoOnComment;
 end;
@@ -1392,8 +1417,13 @@ begin
 end;
 
 destructor TPasSyntaxTreeBuilder.Destroy;
+var
+  Node: TSyntaxNode;
 begin
   FStack.Free;
+  for Node in FLeadingDirectives do
+    Node.Free;
+  FLeadingDirectives.Free;
   FComments.Free;
   inherited;
 end;
@@ -2158,8 +2188,7 @@ end;
 procedure TPasSyntaxTreeBuilder.LibraryFile;
 begin
   //Assert(FStack.Peek.ParentNode = nil);
-  FStack.Push(TSyntaxNode.Create(ntLibrary));
-  AssignLexerPositionToNode(Lexer, FStack.Peek);
+  PushRootNode(ntLibrary);
   inherited;
   //Stack.pop is done in `Run`
 end;
@@ -2355,8 +2384,7 @@ end;
 procedure TPasSyntaxTreeBuilder.PackageFile;
 begin
   //Assert(FStack.Peek.ParentNode = nil);
-  FStack.Push(TSyntaxNode.Create(ntPackage));
-  AssignLexerPositionToNode(Lexer, FStack.Peek);
+  PushRootNode(ntPackage);
   inherited;
   //Stack.pop is done in `Run`
 end;
@@ -2451,8 +2479,7 @@ end;
 procedure TPasSyntaxTreeBuilder.ProgramFile;
 begin
   //Assert(FStack.Peek.ParentNode = nil);
-  FStack.Push(TSyntaxNode.Create(ntProgram));
-  AssignLexerPositionToNode(Lexer, FStack.Peek);
+  PushRootNode(ntProgram);
   inherited;
   //Stack.pop is done in `Run`
 end;
@@ -2657,10 +2684,15 @@ begin
 end;
 
 function TPasSyntaxTreeBuilder.Run(SourceStream: TStream): TSyntaxNode;
+var
+  Node: TSyntaxNode;
 begin
   Result:= nil;
   try
     FStack.Clear;
+    for Node in FLeadingDirectives do
+      Node.Free;
+    FLeadingDirectives.Clear;
     try
       self.OnMessage := ParserMessage;
       inherited Run('', SourceStream);
@@ -3117,8 +3149,7 @@ end;
 procedure TPasSyntaxTreeBuilder.UnitFile;
 begin
   //Assert(FStack.Peek.ParentNode = nil);
-  FStack.Push(TSyntaxNode.Create(ntUnit));
-  AssignLexerPositionToNode(Lexer, FStack.Peek);
+  PushRootNode(ntUnit);
   inherited;
   //Stack.pop is done in `Run`
 end;
