@@ -574,6 +574,7 @@ begin
       141: FIdentFuncTable[I] := Func141;
       142: FIdentFuncTable[I] := Func142;
       143: FIdentFuncTable[I] := Func143;
+      158: FIdentFuncTable[I] := Func158;
       166: FIdentFuncTable[I] := Func166;
       167: FIdentFuncTable[I] := Func167;
       168: FIdentFuncTable[I] := Func168;

@@ -300,6 +300,23 @@ begin
   end;
 end;
 
+procedure TestUnicodeStringTypecast;
+var
+  Root, CallNode, Callee: TSyntaxNode;
+begin
+  Root := ParseSource('unit Example; interface implementation ' +
+    'procedure Run(p: Pointer); var s: UnicodeString; begin s := UnicodeString(p^); end; end.');
+  try
+    CallNode := FindDescendant(Root, ntCall);
+    AssertNotNil(CallNode, 'Missing call');
+    Callee := CallNode.ChildNodes[0];
+    AssertTrue(Callee.Typ = ntType, 'A UnicodeString typecast has a type as its callee.');
+    AssertEquals('UnicodeString', Callee.GetAttribute(anName), 'Typecast type name.');
+  finally
+    Root.Free;
+  end;
+end;
+
 procedure TestInvalidSyntax;
 var
   Root: TSyntaxNode;
@@ -379,6 +396,7 @@ begin
   RunTest('Node.AttributeOverwrite', TestAttributeOverwrite);
   RunTest('Node.AttributeRemove', TestAttributeRemove);
   RunTest('AST.RepeatedCallingConvention', TestRepeatedCallingConvention);
+  RunTest('AST.UnicodeStringTypecast', TestUnicodeStringTypecast);
   RunTest('Parser.InvalidSyntax', TestInvalidSyntax);
   RunTest('Parser.UnexpectedEndOfFilePosition', TestUnexpectedEndOfFilePosition);
   {$IFNDEF FPC}
