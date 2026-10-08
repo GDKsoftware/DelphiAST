@@ -588,7 +588,7 @@ begin
     Previous:= ' ';
     for Child in Node.ChildNodes do begin
       //Store the whole statement as well as the parts.
-      if (ValuedChild.Value[1] in [',', '+', '*', ']', ')', ' ','-',':']) or (Previous in ['(','[',',','+','*','-','@']) then Optional:= '';
+      if CharInSet(ValuedChild.Value[1], [',', '+', '*', ']', ')', ' ','-',':']) or CharInSet(Previous,['(','[',',','+','*','-','@']) then Optional:= '';
       Previous:= ValuedChild.Value[1];
       ValuedNode.Value:= ValuedNode.Value + Optional + ValuedChild.Value;
       Optional:= ' ';
