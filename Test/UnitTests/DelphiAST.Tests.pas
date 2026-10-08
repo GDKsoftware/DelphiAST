@@ -241,6 +241,43 @@ begin
   end;
 end;
 
+procedure TestAttributeOverwrite;
+var
+  Node: TSyntaxNode;
+begin
+  Node := TSyntaxNode.Create(ntMethod);
+  try
+    Node.SetAttribute(anName, 'First');
+    Node.SetAttribute(anType, 'Kept');
+    Node.SetAttribute(anName, 'Second');
+    AssertEquals('Second', Node.GetAttribute(anName), 'Overwritten attribute.');
+    AssertEquals('Kept', Node.GetAttribute(anType), 'Other attribute.');
+    AssertEquals(2, Length(Node.Attributes), 'Overwriting must not add an entry.');
+  finally
+    Node.Free;
+  end;
+end;
+
+procedure TestRepeatedCallingConvention;
+var
+  Root, IntfNode: TSyntaxNode;
+begin
+  Root := ParseSource('unit Example; interface ' +
+    'procedure Same(A: Integer); stdcall; stdcall; external ''a.dll'' index 93; ' +
+    'procedure Other; stdcall; cdecl; external ''a.dll''; implementation end.');
+  try
+    IntfNode := FindDescendant(Root, ntInterface);
+    AssertNotNil(IntfNode, 'Missing interface');
+    AssertEquals(2, CountDescendants(IntfNode, ntMethod), 'Method count.');
+    AssertEquals('stdcall', IntfNode.ChildNodes[0].GetAttribute(anCallingConvention),
+      'A repeated calling convention.');
+    AssertEquals('cdecl', IntfNode.ChildNodes[1].GetAttribute(anCallingConvention),
+      'The last of two calling conventions.');
+  finally
+    Root.Free;
+  end;
+end;
+
 procedure TestInvalidSyntax;
 var
   Root: TSyntaxNode;
@@ -295,6 +332,8 @@ begin
   RunTest('AST.SourcePositions', TestSourcePositions);
   RunTest('AST.ConstantEndPosition', TestConstantEndPosition);
   RunTest('AST.VariableEndPosition', TestVariableEndPosition);
+  RunTest('Node.AttributeOverwrite', TestAttributeOverwrite);
+  RunTest('AST.RepeatedCallingConvention', TestRepeatedCallingConvention);
   RunTest('Parser.InvalidSyntax', TestInvalidSyntax);
   {$IFNDEF FPC}
   RunTest('Serialization.BinaryRoundTrip', TestBinarySerializationRoundTrip);
