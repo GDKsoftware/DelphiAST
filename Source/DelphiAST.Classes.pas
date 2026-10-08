@@ -421,16 +421,19 @@ var
   AttributeEntry: PAttributeEntry;
   len: Integer;
 begin
-  if not HasAttribute(Key) then
+  if (Value = '') then
   begin
-    if (Value = '') then Exit;  //no action needed
+    RemoveAttribute(Key);
+    Exit;
+  end;
+  if not TryGetAttributeEntry(Key, AttributeEntry) then
+  begin
     len := Length(FAttributes);
     SetLength(FAttributes, len + 1);
     AttributeEntry := @FAttributes[len];
     AttributeEntry^.Key := Key;
     Include(FAttributesInUse, Key);
   end;
-  if (Value = '') then RemoveAttribute(Key);
   AttributeEntry^.Value := Value;
 end;
 
