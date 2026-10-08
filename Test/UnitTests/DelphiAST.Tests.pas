@@ -317,6 +317,28 @@ begin
   AssertTrue(Raised, 'Invalid syntax did not raise ESyntaxTreeException');
 end;
 
+procedure TestUnexpectedEndOfFilePosition;
+var
+  Root: TSyntaxNode;
+  Raised: Boolean;
+begin
+  Root := nil;
+  Raised := False;
+  try
+    Root := ParseSource('unit Broken;' + sLineBreak + 'interface' + sLineBreak +
+      'implementation' + sLineBreak + 'procedure Run;' + sLineBreak + 'begin');
+  except
+    on E: ESyntaxTreeException do
+    begin
+      Raised := True;
+      AssertEquals(5, E.Line, 'The end of file is on line 5.');
+      AssertEquals(6, E.Col, 'The end of file is after the 5 characters of "begin".');
+    end;
+  end;
+  Root.Free;
+  AssertTrue(Raised, 'An unexpected end of file did not raise ESyntaxTreeException');
+end;
+
 {$IFNDEF FPC}
 procedure TestBinarySerializationRoundTrip;
 var
@@ -358,6 +380,7 @@ begin
   RunTest('Node.AttributeRemove', TestAttributeRemove);
   RunTest('AST.RepeatedCallingConvention', TestRepeatedCallingConvention);
   RunTest('Parser.InvalidSyntax', TestInvalidSyntax);
+  RunTest('Parser.UnexpectedEndOfFilePosition', TestUnexpectedEndOfFilePosition);
   {$IFNDEF FPC}
   RunTest('Serialization.BinaryRoundTrip', TestBinarySerializationRoundTrip);
   {$ENDIF}
