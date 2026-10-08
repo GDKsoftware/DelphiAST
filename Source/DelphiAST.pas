@@ -5,7 +5,7 @@ unit DelphiAST;
 interface
 
 uses
-  SysUtils, Classes, Generics.Collections, SimpleParser, SimpleParser.Lexer,
+  SysUtils, Classes, {$IFDEF FPC_DOTTEDUNITS}System.Generics.Collections{$ELSE}Generics.Collections{$ENDIF}, SimpleParser, SimpleParser.Lexer,
   SimpleParser.Lexer.Types, DelphiAST.Classes, DelphiAST.Consts, DelphiAST.SimpleParserEx;
 
 type

@@ -3,7 +3,7 @@ unit DelphiAST.SimpleParserEx;
 interface
 
 uses
-  SysUtils, Generics.Collections, SimpleParser, SimpleParser.Lexer.Types,
+  SysUtils, {$IFDEF FPC_DOTTEDUNITS}System.Generics.Collections{$ELSE}Generics.Collections{$ENDIF}, SimpleParser, SimpleParser.Lexer.Types,
   SimpleParser.Lexer, Classes;
 
 type
