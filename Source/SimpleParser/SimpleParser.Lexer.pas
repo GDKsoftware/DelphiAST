@@ -56,7 +56,7 @@ interface
 uses
   SysUtils, Classes, Character,
   {$IFDEF FPC}
-    Generics.Collections,
+    {$IFDEF FPC_DOTTEDUNITS}System.Generics.Collections{$ELSE}Generics.Collections{$ENDIF},
   {$ENDIF}
   SimpleParser.Lexer.Types;
 

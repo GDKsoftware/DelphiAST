@@ -6,7 +6,7 @@ interface
 
 uses
   Classes,
-  Generics.Collections,
+  {$IFDEF FPC_DOTTEDUNITS}System.Generics.Collections{$ELSE}Generics.Collections{$ENDIF},
   DelphiAST.Consts,
   DelphiAST.Classes;
 

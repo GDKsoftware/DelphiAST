@@ -5,7 +5,7 @@ unit DelphiAST.Classes;
 interface
 
 uses
-  SysUtils, Generics.Collections, SimpleParser.Lexer.Types, DelphiAST.Consts;
+  SysUtils, {$IFDEF FPC_DOTTEDUNITS}System.Generics.Collections{$ELSE}Generics.Collections{$ENDIF}, SimpleParser.Lexer.Types, DelphiAST.Consts;
 
 type
   EParserException = class(Exception)

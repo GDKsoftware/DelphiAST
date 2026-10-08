@@ -5,7 +5,12 @@ unit DelphiAST.ProjectIndexer;
 interface
 
 uses
-  Classes, Generics.Defaults, Generics.Collections,
+  Classes,
+  {$IFDEF FPC_DOTTEDUNITS}
+  System.Generics.Defaults, System.Generics.Collections,
+  {$ELSE}
+  Generics.Defaults, Generics.Collections,
+  {$ENDIF}
   SimpleParser.Lexer.Types,
   DelphiAST, DelphiAST.Classes, DelphiAST.Consts;
 

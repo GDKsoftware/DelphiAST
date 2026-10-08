@@ -26,7 +26,7 @@ type
 implementation
 
 uses
-  Generics.Collections,
+  {$IFDEF FPC_DOTTEDUNITS}System.Generics.Collections{$ELSE}Generics.Collections{$ENDIF},
   {$IFNDEF FPC}
     DelphiAST.Serialize.Binary,
   {$ENDIF}
