@@ -2672,7 +2672,7 @@ begin
     on E: EParserException do
       raise ESyntaxTreeException.Create(E.Line, E.Col, Lexer.FileName, E.Message, Result);
     on E: ESyntaxError do
-      raise ESyntaxTreeException.Create(E.PosXY.X, E.PosXY.Y, Lexer.FileName, E.Message, Result);
+      raise ESyntaxTreeException.Create(E.PosXY.Y, E.PosXY.X, Lexer.FileName, E.Message, Result);
     else
       FreeAndNil(Result);
       raise;
